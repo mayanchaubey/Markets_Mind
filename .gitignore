@@ -1,0 +1,13 @@
+.env
+chroma_db/
+pipeline.log
+pipeline_metrics.json
+hf_cache/
+__pycache__/
+*.pyc
+data/
+*.egg-info/
+.venv/
+venv/
+*.log
+*.json

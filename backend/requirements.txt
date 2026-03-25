@@ -1,0 +1,39 @@
+# Core LangChain
+langchain
+langchain-core
+langchain-community
+langchain-huggingface
+langchain-chroma
+
+# Embeddings
+sentence-transformers
+torch
+transformers
+huggingface-hub
+
+# Vector store
+chromadb
+
+# LLM
+groq
+
+# Data ingestion
+requests
+beautifulsoup4
+feedparser
+pandas
+youtube-transcript-api
+pytube
+
+# FastAPI
+fastapi
+uvicorn
+python-dotenv
+pydantic
+
+# Scheduler
+schedule
+
+# Utilities
+numpy
+tqdm
