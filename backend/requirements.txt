@@ -4,6 +4,7 @@ langchain-core
 langchain-community
 langchain-huggingface
 langchain-chroma
+langchain-pinecone
 
 # Embeddings
 sentence-transformers
@@ -11,8 +12,9 @@ torch
 transformers
 huggingface-hub
 
-# Vector store
+# Vector stores
 chromadb
+pinecone                      # modern pinecone SDK (replaces pinecone-client)
 
 # LLM
 groq
@@ -22,8 +24,11 @@ requests
 beautifulsoup4
 feedparser
 pandas
+yfinance
 youtube-transcript-api
 pytube
+lxml
+html5lib
 
 # FastAPI
 fastapi
