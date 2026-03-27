@@ -16,3 +16,4 @@ build/
 dist/
 npm_cache/
 pip_cache/
+.hf_cache/
