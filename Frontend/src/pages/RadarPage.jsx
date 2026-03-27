@@ -32,8 +32,8 @@ const mapOpportunity = (opportunity = {}) => {
     typeof opportunity.score === 'number'
       ? opportunity.score
       : typeof opportunity.finbert_score === 'number'
-      ? opportunity.finbert_score
-      : 0;
+        ? opportunity.finbert_score
+        : 0;
 
   const description = rawSignalText || `Opportunity score ${scoreValue.toFixed ? scoreValue.toFixed(2) : scoreValue}`;
 
@@ -97,10 +97,10 @@ export const RadarPage = () => {
         const rawOpportunities = Array.isArray(payload)
           ? payload
           : Array.isArray(payload?.opportunities)
-          ? payload.opportunities
-          : Array.isArray(payload?.data)
-          ? payload.data
-          : [];
+            ? payload.opportunities
+            : Array.isArray(payload?.data)
+              ? payload.data
+              : [];
         setOpportunities(rawOpportunities.map(mapOpportunity));
       } catch (err) {
         if (err.name === 'AbortError') return;
@@ -133,10 +133,10 @@ export const RadarPage = () => {
       return filter === 'BULLISH'
         ? signalText.includes('bull') || signalText.includes('buy')
         : filter === 'BEARISH'
-        ? signalText.includes('bear') || signalText.includes('sell')
-        : filter === 'NEUTRAL'
-        ? signalText && !signalText.includes('bull') && !signalText.includes('bear')
-        : false;
+          ? signalText.includes('bear') || signalText.includes('sell')
+          : filter === 'NEUTRAL'
+            ? signalText && !signalText.includes('bull') && !signalText.includes('bear')
+            : false;
     });
   }, [filter, allOpportunities]);
 

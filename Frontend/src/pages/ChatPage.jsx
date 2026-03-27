@@ -115,15 +115,15 @@ const MessageBubble = ({ msg, index }) => {
       transition={{ duration: 0.4, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
       className={`flex items-end gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
     >
-        {isUser ? (
-          <div className="shrink-0 w-8 h-8 rounded-lg bg-[#FDECEC] border border-[#FAD4D0] flex items-center justify-center">
-            <User className="w-4 h-4 text-accent-primary" />
-          </div>
-        ) : (
-          <div className="shrink-0 w-8 h-8 rounded-lg bg-white border border-border flex items-center justify-center shadow-sm">
-            <img src={logo} alt="MarketMind AI" className="w-6 h-6 object-contain" />
-          </div>
-        )}
+      {isUser ? (
+        <div className="shrink-0 w-8 h-8 rounded-lg bg-[#FDECEC] border border-[#FAD4D0] flex items-center justify-center">
+          <User className="w-4 h-4 text-accent-primary" />
+        </div>
+      ) : (
+        <div className="shrink-0 w-8 h-8 rounded-lg bg-white border border-border flex items-center justify-center shadow-sm">
+          <img src={logo} alt="MarketMind AI" className="w-6 h-6 object-contain" />
+        </div>
+      )}
 
       <div className={`group max-w-[75%] ${isUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
         {isUser ? (
@@ -135,24 +135,24 @@ const MessageBubble = ({ msg, index }) => {
                 <div className="mt-3 space-y-2">
                   {msg.attachments.map((file, i) => {
                     const isImg = file.mimeType?.startsWith('image/');
-                      return (
-                        <div 
-                          key={i} 
-                          className={`flex items-center gap-3 px-3 py-2 rounded-xl border ${msg.status === 'error' ? 'bg-danger-red/10 border-danger-red/40 text-danger-red' : 'bg-white border-border text-text-secondary shadow-sm'}`}
-                        >
-                          <div className="w-10 h-10 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
-                            {isImg ? (
-                              <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <FileText className="w-5 h-5 text-accent-primary" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0 pr-2">
-                            <p className="text-[11px] font-semibold truncate text-text-primary">{file.name}</p>
-                            <p className="text-[9px] text-text-secondary">{file.mimeType?.split('/')[1] || 'file'}</p>
-                          </div>
+                    return (
+                      <div
+                        key={i}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-xl border ${msg.status === 'error' ? 'bg-danger-red/10 border-danger-red/40 text-danger-red' : 'bg-white border-border text-text-secondary shadow-sm'}`}
+                      >
+                        <div className="w-10 h-10 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
+                          {isImg ? (
+                            <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <FileText className="w-5 h-5 text-accent-primary" />
+                          )}
                         </div>
-                      );
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className="text-[11px] font-semibold truncate text-text-primary">{file.name}</p>
+                          <p className="text-[9px] text-text-secondary">{file.mimeType?.split('/')[1] || 'file'}</p>
+                        </div>
+                      </div>
+                    );
                   })}
                 </div>
               )}
@@ -166,44 +166,78 @@ const MessageBubble = ({ msg, index }) => {
           </div>
         ) : (
           <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-white border border-border shadow-sm text-sm leading-relaxed text-text-primary">
-            {msg.content.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-              part.startsWith('**') && part.endsWith('**') ? (
-                <strong key={i} className="text-text-primary font-semibold">{part.slice(2, -2)}</strong>
-              ) : (
-                <span key={i}>{part}</span>
-              )
-            )}
+            {(() => {
+              const lines = msg.content.split('\n');
+              return lines.map((line, i) => {
+                const trimmed = line.trim();
+
+                if (!trimmed) return <div key={i} className="h-2" />;
+
+                const renderInline = (text) =>
+                  text.split(/(\*\*[^*]+\*\*)/g).map((part, j) =>
+                    part.startsWith('**') && part.endsWith('**') ? (
+                      <strong key={j} className="font-semibold text-text-primary">{part.slice(2, -2)}</strong>
+                    ) : (
+                      <span key={j}>{part}</span>
+                    )
+                  );
+
+                if (/^[\*\+\-•]\s/.test(trimmed)) {
+                  return (
+                    <div key={i} className="flex items-start gap-2 my-0.5">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent-primary shrink-0" />
+                      <span className="text-sm leading-relaxed">{renderInline(trimmed.replace(/^[\*\+\-•]\s/, ''))}</span>
+                    </div>
+                  );
+                }
+
+                if (/^\t[\*\+\-]\s/.test(line) || /^  +[\*\+\-]\s/.test(line)) {
+                  return (
+                    <div key={i} className="flex items-start gap-2 my-0.5 ml-5">
+                      <span className="mt-1.5 w-1 h-1 rounded-full bg-text-muted shrink-0" />
+                      <span className="text-sm leading-relaxed text-text-secondary">{renderInline(trimmed.replace(/^[\*\+\-]\s/, ''))}</span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <p key={i} className="text-sm leading-relaxed my-0.5">
+                    {renderInline(trimmed)}
+                  </p>
+                );
+              });
+            })()}
 
             {msg.attachments && msg.attachments.length > 0 && (
               <div className="mt-3 space-y-2">
                 {msg.attachments.map((file, i) => {
                   const isImg = file.mimeType?.startsWith('image/');
-                      return (
-                        <div 
-                          key={i} 
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl border border-border bg-white text-text-secondary shadow-sm"
-                        >
-                          <div className="w-10 h-10 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
-                            {isImg ? (
-                              <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <FileText className="w-5 h-5 text-accent-primary" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0 pr-2">
-                            <p className="text-[11px] font-semibold truncate text-text-primary">{file.name}</p>
-                            <p className="text-[9px] text-text-secondary">{file.mimeType?.split('/')[1] || 'file'}</p>
-                          </div>
-                          <a 
-                            href={file.url} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="p-1.5 rounded-lg text-text-secondary hover:text-accent-primary transition-colors"
-                          >
-                            <Download className="w-4 h-4" />
-                          </a>
-                        </div>
-                      );
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 px-3 py-2 rounded-xl border border-border bg-white text-text-secondary shadow-sm"
+                    >
+                      <div className="w-10 h-10 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
+                        {isImg ? (
+                          <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <FileText className="w-5 h-5 text-accent-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 pr-2">
+                        <p className="text-[11px] font-semibold truncate text-text-primary">{file.name}</p>
+                        <p className="text-[9px] text-text-secondary">{file.mimeType?.split('/')[1] || 'file'}</p>
+                      </div>
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded-lg text-text-secondary hover:text-accent-primary transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                    </div>
+                  );
                 })}
               </div>
             )}
@@ -245,7 +279,7 @@ const EmptyState = ({ onSuggest }) => (
     className="flex flex-col items-center justify-center h-full text-center px-6 py-10 space-y-4 max-w-[320px] w-full mx-auto"
   >
     <div className="relative mb-6">
-      
+
     </div>
 
     <h3 className="text-lg font-bold text-text-primary mb-2">MarketMind AI Terminal</h3>
@@ -253,12 +287,12 @@ const EmptyState = ({ onSuggest }) => (
       Ask anything about Indian markets — stock analysis, SEBI circulars, live signals, or macroeconomic trends.
     </p>
 
-      <div className="mt-4 flex flex-wrap gap-2 justify-center w-full">
+    <div className="mt-4 flex flex-wrap gap-2 justify-center w-full">
       {['NIFTY outlook today?', 'Analyse Reliance', 'Latest SEBI circular', 'Bearish signals now'].map((q) => (
         <button
           key={q}
           onClick={() => onSuggest(q)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-white text-xs font-semibold text-text-secondary hover:border-accent-primary hover:text-text-primary transition-colors duration-200"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-white text-xs font-semibold text-text-secondary hover:border-accent-primary hover:text-text-primary transition-colors duration-200"
         >
           <Zap className="w-3 h-3" />
           {q}
@@ -288,7 +322,7 @@ const ChatHistorySidebar = ({ onSuggest, isOpen, onClose }) => {
         )}
       </AnimatePresence>
 
-      <aside 
+      <aside
         className={`
           fixed inset-y-0 left-0 z-50 w-72 lg:static flex flex-col shrink-0 border-r border-border bg-background-secondary transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -318,8 +352,8 @@ const ChatHistorySidebar = ({ onSuggest, isOpen, onClose }) => {
                     onClick={() => { switchChat(chat.id); if (window.innerWidth < 1024) onClose(); }}
                     className={`
                       w-full flex flex-col items-start gap-1 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border
-                      ${activeChatId === chat.id 
-                        ? 'bg-interactive-primary/10 border-interactive-primary/30 text-interactive-primary' 
+                      ${activeChatId === chat.id
+                        ? 'bg-interactive-primary/10 border-interactive-primary/30 text-interactive-primary'
                         : 'bg-transparent border-transparent text-text-secondary hover:bg-background-card hover:border-border hover:text-text-primary'}
                     `}
                   >
@@ -338,7 +372,7 @@ const ChatHistorySidebar = ({ onSuggest, isOpen, onClose }) => {
           )}
 
           <div className="pt-2 border-t border-border/50">
-             {suggestionGroups.map((group) => {
+            {suggestionGroups.map((group) => {
               const Icon = ICON_MAP[group.icon] || Activity;
               return (
                 <div key={group.label} className="mt-5 first:mt-2">
@@ -374,7 +408,7 @@ const ChatHistorySidebar = ({ onSuggest, isOpen, onClose }) => {
 export const ChatPage = () => {
   const location = useLocation();
   const { activeChat, activeChatId, addMessage, updateMessage, createChat, clearCurrentChat } = useChat();
-  
+
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -382,7 +416,7 @@ export const ChatPage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
-  
+
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -573,15 +607,15 @@ export const ChatPage = () => {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-white border-l border-border">
         <div className="shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-border bg-white z-10">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(true)}
               className="lg:hidden p-2 -ml-1 rounded-lg text-text-secondary hover:text-accent-primary"
             >
               <MessageSquare className="w-5 h-5 text-accent-primary" />
             </button>
             <div className="w-8 h-8 rounded-lg bg-white border border-accent-primary/40 flex items-center justify-center">
-            <img src={logo} alt="MarketMind AI" className="w-6 h-6 object-contain" />
-          </div>
+              <img src={logo} alt="MarketMind AI" className="w-6 h-6 object-contain" />
+            </div>
             <div>
               <p className="text-sm font-bold text-text-primary leading-none truncate max-w-[140px] sm:max-w-xs">{activeChat?.title || 'MarketMind AI'}</p>
               <p className="text-[10px] text-text-muted font-mono mt-1 flex items-center gap-1.5">
@@ -597,11 +631,11 @@ export const ChatPage = () => {
 
           <div className="flex items-center gap-2">
             {activeChatId && (
-                <button
-                  onClick={clearCurrentChat}
-                  className="p-2 rounded-lg text-text-muted hover:text-accent-primary hover:bg-accent-primary/10 transition-colors"
-                  title="Clear current chart"
-                >
+              <button
+                onClick={clearCurrentChat}
+                className="p-2 rounded-lg text-text-muted hover:text-accent-primary hover:bg-accent-primary/10 transition-colors"
+                title="Clear current chart"
+              >
                 <RotateCcw className="w-4 h-4" />
               </button>
             )}
@@ -617,9 +651,9 @@ export const ChatPage = () => {
             {messages.length === 0 && !isTyping ? (
               <EmptyState key="empty" onSuggest={handleSuggest} />
             ) : (
-              <motion.div 
+              <motion.div
                 key="chat-flow"
-                initial={{ opacity: 0 }} 
+                initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="space-y-6"
               >
@@ -634,11 +668,11 @@ export const ChatPage = () => {
         </div>
 
         <div className="shrink-0 border-t border-border bg-background-primary/80 backdrop-blur-xl px-4 sm:px-6 py-4">
-          
+
           {/* File Upload Preview */}
           <AnimatePresence>
             {selectedFiles.length > 0 && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
@@ -650,7 +684,7 @@ export const ChatPage = () => {
                       {file.mimeType.startsWith('image/') ? <ImageIcon className="w-3 h-3 text-interactive-primary" /> : <FileText className="w-3 h-3 text-interactive-primary" />}
                     </div>
                     <span className="text-[11px] font-bold text-text-primary truncate max-w-[120px]">{file.name}</span>
-                    <button 
+                    <button
                       onClick={() => removeFile(i)}
                       className="absolute top-1/2 -translate-y-1/2 right-1.5 p-1 rounded-md text-text-muted hover:text-white hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
                     >
@@ -675,10 +709,10 @@ export const ChatPage = () => {
           )}
 
           {uploadError && (
-             <div className="flex items-center gap-2 mb-3 px-1 text-danger-red">
-               <AlertTriangle className="w-3 h-3" />
-               <span className="text-[10px] font-mono tracking-widest uppercase">{uploadError}</span>
-             </div>
+            <div className="flex items-center gap-2 mb-3 px-1 text-danger-red">
+              <AlertTriangle className="w-3 h-3" />
+              <span className="text-[10px] font-mono tracking-widest uppercase">{uploadError}</span>
+            </div>
           )}
 
           {/* Mobile quick suggestions */}
@@ -716,14 +750,14 @@ export const ChatPage = () => {
                 <Paperclip className="w-4 h-4" />
               </button>
               <textarea
-  ref={inputRef}
-  value={input}
-  onChange={(e) => setInput(e.target.value)}
-  onKeyDown={handleKeyDown}
-  placeholder={isUploading ? "Uploading file..." : "Ask anything about markets..."}
-  rows={1}
-  disabled={isTyping}
-  className="
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isUploading ? "Uploading file..." : "Ask anything about markets..."}
+                rows={1}
+                disabled={isTyping}
+                className="
     flex-1
     bg-transparent
     border-none
@@ -737,11 +771,11 @@ export const ChatPage = () => {
     max-h-32
     overflow-y-auto
   "
-  onInput={(e) => {
-    e.target.style.height = 'auto';
-    e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
-  }}
-/>
+                onInput={(e) => {
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
+                }}
+              />
               {input.length > 0 && (
                 <span className="shrink-0 text-[10px] font-mono text-text-muted pb-1 mb-0.5">↵</span>
               )}
@@ -773,10 +807,10 @@ export const ChatPage = () => {
         </div>
       </div>
 
-      <IntelligencePanel 
-        activeQuery={activeQuery} 
-        isLoading={isTyping} 
-        intelligence={messages[messages.length - 1]?.role === 'assistant' ? messages[messages.length - 1]?.intelligence : null} 
+      <IntelligencePanel
+        activeQuery={activeQuery}
+        isLoading={isTyping}
+        intelligence={messages[messages.length - 1]?.role === 'assistant' ? messages[messages.length - 1]?.intelligence : null}
       />
     </div>
   );
