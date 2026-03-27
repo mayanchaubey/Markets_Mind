@@ -84,7 +84,7 @@ export const RadarPage = () => {
         const response = await fetch(RADAR_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: filter === 'ALL' ? '' : filter }),
+          body: JSON.stringify({ query: '' }),
           signal: controller.signal,
         });
 
@@ -114,31 +114,54 @@ export const RadarPage = () => {
 
     fetchOpportunities();
     return () => controller.abort();
-  }, [filter]);
+  }, []);
 
   const allOpportunities = opportunities;
 
   // Filter list (only affects visible cards)
+  const normalizedFilter = filter.toLowerCase();
+
   const filteredOpportunities = useMemo(() => {
-    if (filter === 'ALL') return allOpportunities;
-
-    return allOpportunities.filter((o) => {
-      const signalType = (o.signal_type || '').toUpperCase();
-
-      if (signalType === filter) return true;
-
-      const rawText = o.signal || o.description || '';
-      const signalText = typeof rawText === 'string' ? rawText.toLowerCase() : '';
-
-      return filter === 'BULLISH'
-        ? signalText.includes('bull') || signalText.includes('buy')
-        : filter === 'BEARISH'
-          ? signalText.includes('bear') || signalText.includes('sell')
-          : filter === 'NEUTRAL'
-            ? signalText && !signalText.includes('bull') && !signalText.includes('bear')
-            : false;
+    console.debug('Radar dataset', {
+      filter,
+      normalizedFilter,
+      totalSignals: allOpportunities.length,
+      opportunities: allOpportunities,
     });
-  }, [filter, allOpportunities]);
+
+    if (normalizedFilter === 'all') {
+      console.debug('Radar filter result', {
+        filter,
+        normalizedFilter,
+        filteredCount: allOpportunities.length,
+      });
+      return allOpportunities;
+    }
+
+    const filtered = allOpportunities.filter((o) => {
+      const signalType = (o.signal_type || '').toLowerCase();
+
+      if (signalType === normalizedFilter) return true;
+
+      if (!signalType) {
+        const text = (o.description || o.signal || '').toLowerCase();
+        if (normalizedFilter === 'bullish') return text.includes('bull') || text.includes('buy');
+        if (normalizedFilter === 'bearish') return text.includes('bear') || text.includes('sell');
+        if (normalizedFilter === 'neutral')
+          return text && !text.includes('bull') && !text.includes('bear');
+      }
+
+      return false;
+    });
+
+    console.debug('Radar filter result', {
+      filter,
+      normalizedFilter,
+      filteredCount: filtered.length,
+    });
+
+    return filtered;
+  }, [filter, normalizedFilter, allOpportunities]);
 
   // Derived stats (always from full dataset)
   const totalSignals = allOpportunities.length;
