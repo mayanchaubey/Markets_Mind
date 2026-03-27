@@ -43,11 +43,17 @@ const VERDICT_CONFIG = {
   },
 };
 
-const CONFIDENCE_LEVELS = {
-  VERIFIED: 0.9,
-  FALSE: 0.7,
-  MISLEADING: 0.55,
-  UNKNOWN: 0.35,
+const getConfidence = (verdict) => {
+  switch (verdict?.toLowerCase()) {
+    case 'verified':
+      return 0.8;
+    case 'misleading':
+      return 0.4;
+    case 'false':
+      return 0.2;
+    default:
+      return 0.5;
+  }
 };
 
 const VerdictBadge = ({ cfg }) => (
@@ -64,61 +70,59 @@ const VerdictBadge = ({ cfg }) => (
   </span>
 );
 
-const ConfidenceBar = ({ cfg, verdict }) => {
-  const level = CONFIDENCE_LEVELS[verdict] || 0.4;
-  const filledCount = Math.round(level * 6);
-
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-[10px] text-text-secondary">
-        <span>AI Confidence</span>
-        <span style={{ color: cfg.color }}>{Math.round(level * 100)}%</span>
-      </div>
-      <div className="flex gap-1">
-        {Array.from({ length: 6 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="flex-1 h-[4px] rounded-full"
-            style={{
-              background: idx < filledCount ? cfg.barColor : '#E5E7EB',
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
-
 export const ClaimRow = ({ claim: claimData, index = 0 }) => {
   const { claim, verdict = 'UNKNOWN', explanation, source } = claimData;
   const cfg = VERDICT_CONFIG[verdict] || VERDICT_CONFIG.UNKNOWN;
+  const confidence = getConfidence(verdict);
+  const progressColor =
+    verdict === 'VERIFIED'
+      ? '#16a34a'
+      : verdict === 'MISLEADING'
+      ? '#f59e0b'
+      : verdict === 'FALSE'
+      ? '#ef4444'
+      : '#6B7280';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.08 }}
-      className="card-surface border border-border"
+      className="card-surface border border-border rounded-2xl hover:shadow-md transition-shadow duration-200"
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex items-start gap-4">
-          <div
-            className="flex items-center justify-center w-10 h-10 rounded-full border"
-            style={{ borderColor: cfg.border, background: cfg.bg }}
-          >
-            <cfg.Icon className="w-5 h-5" style={{ color: cfg.color }} />
-          </div>
-          <div className="flex-1 space-y-2">
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-base font-semibold text-text-primary leading-snug">
-                {claim}
-              </p>
-              <VerdictBadge cfg={cfg} />
+      <div className="space-y-4 p-5">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <p className="text-base font-semibold text-text-primary leading-snug md:max-w-3xl">
+            {claim}
+          </p>
+          <div className="flex flex-col items-start gap-2 text-right md:items-end">
+            <VerdictBadge cfg={cfg} />
+            <div className="text-xs text-text-secondary uppercase tracking-wide">
+              AI Confidence
+              <div className="mt-0.5 text-sm font-semibold" style={{ color: cfg.color }}>
+                {Math.round(confidence * 100)}%
+              </div>
             </div>
-            <p className="text-sm text-text-secondary leading-relaxed">{explanation}</p>
           </div>
         </div>
-        <ConfidenceBar cfg={cfg} verdict={verdict} />
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-[10px] text-text-secondary uppercase tracking-wide">
+            <span>AI Confidence</span>
+            <span style={{ color: progressColor }}>{Math.round(confidence * 100)}%</span>
+          </div>
+          <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.min(100, Math.max(0, confidence * 100))}%`,
+                background: progressColor,
+              }}
+            />
+          </div>
+          <p className="text-sm text-text-secondary leading-relaxed">{explanation}</p>
+        </div>
+
         <div className="flex items-center justify-between text-[11px] text-text-secondary">
           <div className="flex items-center gap-1">
             <BookOpen className="w-3 h-3" />
