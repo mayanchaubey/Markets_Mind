@@ -22,9 +22,9 @@ services:
   # Frontend: React Vite Static Site
   - type: web
     name: bullstips-frontend
-    env: static
+    enruntimestatic
     buildCommand: npm install && npm run build
-    publishPath: ./Frontend/dist
+    ststaticPublishPathblishPath: ./Frontend/dist
     buildCommandContext: ./Frontend
     envVars:
       - key: VITE_FACTCHECK_ENDPOINT
