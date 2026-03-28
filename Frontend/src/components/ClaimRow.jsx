@@ -72,14 +72,15 @@ const VerdictBadge = ({ cfg }) => (
 
 export const ClaimRow = ({ claim: claimData, index = 0 }) => {
   const { claim, verdict = 'UNKNOWN', explanation, source } = claimData;
-  const cfg = VERDICT_CONFIG[verdict] || VERDICT_CONFIG.UNKNOWN;
-  const confidence = getConfidence(verdict);
+  const normalizedVerdict = verdict?.toUpperCase() || 'UNKNOWN';
+  const cfg = VERDICT_CONFIG[normalizedVerdict] || VERDICT_CONFIG.UNKNOWN;
+  const confidence = claimData.confidence ?? getConfidence(normalizedVerdict);
   const progressColor =
-    verdict === 'VERIFIED'
+    normalizedVerdict === 'VERIFIED'
       ? '#16a34a'
-      : verdict === 'MISLEADING'
+      : normalizedVerdict === 'MISLEADING'
       ? '#f59e0b'
-      : verdict === 'FALSE'
+      : normalizedVerdict === 'FALSE'
       ? '#ef4444'
       : '#6B7280';
 

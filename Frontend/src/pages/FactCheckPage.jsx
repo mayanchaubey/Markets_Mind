@@ -77,10 +77,12 @@ export const FactCheckPage = () => {
       setResult({
         claims,
         summary: {
-          true: summaryPayload.true ?? 0,
+          true: summaryPayload.verified ?? summaryPayload.true ?? 0,
           false: summaryPayload.false ?? 0,
           misleading: summaryPayload.misleading ?? 0,
         },
+        risk_score: payload?.risk_score,
+        risk_label: payload?.risk_label
       });
     } catch (err) {
       console.error("Fact check failed:", err);
@@ -275,11 +277,25 @@ export const FactCheckPage = () => {
             </div>
 
             {/* Claims Breakdown Title */}
-            <div className="flex items-center gap-3 py-3 border-b border-border">
-              <Search className="w-4 h-4 text-[#C1121F]" />
-              <h3 className="text-sm font-semibold text-text-primary">
-                Extraction & Verdict Breakdown
-              </h3>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 py-3 border-b border-border">
+              <div className="flex items-center gap-3">
+                <Search className="w-4 h-4 text-[#C1121F]" />
+                <h3 className="text-sm font-semibold text-text-primary">
+                  Extraction & Verdict Breakdown
+                </h3>
+              </div>
+              {result.risk_label && (
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <span className="text-text-secondary uppercase tracking-wider text-[11px]">Overall Video Risk:</span>
+                  <span className={`px-3 py-1 rounded-full text-xs border ${
+                    result.risk_label === 'High Risk' ? 'bg-red-50 text-red-600 border-red-200' : 
+                    result.risk_label === 'Moderate Risk' ? 'bg-amber-50 text-amber-600 border-amber-200' : 
+                    'bg-green-50 text-green-600 border-green-200'
+                  }`}>
+                    {result.risk_label} ({result.risk_score})
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Claim Rows List */}
