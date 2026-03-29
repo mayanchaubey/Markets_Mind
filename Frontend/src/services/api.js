@@ -1,10 +1,17 @@
-import { demoChatResponse, demoCannedResponses } from '../data/demoResponses';
+import { demoChatResponse } from '../data/demoResponses';
 import { demoSignals } from '../data/demoSignals';
 import { demoVerifyResult } from '../data/demoClaims';
 
-const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const normalizedBaseUrl = rawBaseUrl.replace(/\/+$/, '');
-const API_BASE_URL = normalizedBaseUrl.endsWith('/api') ? normalizedBaseUrl : `${normalizedBaseUrl}/api`;
+const viteApiUrl = import.meta.env.VITE_API_URL;
+if (!viteApiUrl || !viteApiUrl.trim()) {
+  throw new Error('VITE_API_URL is missing. Set it in your Vite env files before building.');
+}
+const normalizedRoot = viteApiUrl.trim().replace(/\/+$/, '');
+export const API_ROOT_URL = normalizedRoot;
+export const API_BASE_URL = normalizedRoot.endsWith('/api')
+  ? normalizedRoot
+  : `${normalizedRoot}/api`;
+const buildUrl = (endpoint) => `${API_BASE_URL}${endpoint}`;
 // We will use a flag to control whether to use demo data immediately for testing without a backend,
 // or we can attempt to fetch and catch errors to fallback. We'll do the attempt/fallback approach.
 
@@ -12,12 +19,12 @@ const API_BASE_URL = normalizedBaseUrl.endsWith('/api') ? normalizedBaseUrl : `$
  * Helper to handle fetch with timeout & fallback.
  * Standardizes the response structure: { data, isDemo, error? }
  */
-const fetchWithFallback = async (endpoint, options, fallbackData) => {
+const fetchWithFallback = async (endpoint, options = {}, fallbackData) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 12000); // Increased to 12s for RAG
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(buildUrl(endpoint), {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -82,20 +89,20 @@ export const api = {
    */
   getUploadUrl: async (filename, fileType) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/upload-url`, {
+      const response = await fetch(buildUrl('/upload-url'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename, file_type: fileType }),
+        body: JSON.stringify({ fileName: filename, fileType }),
       });
       if (!response.ok) throw new Error('Failed to get upload URL');
       return await response.json();
     } catch (err) {
       console.error(err);
       // Demo fallback
-      return { 
-        upload_url: 'https://demo-upload.com', 
-        file_url: `https://demo-storage.com/${filename}`,
-        isDemo: true 
+      return {
+        uploadUrl: 'https://demo-upload.com',
+        fileUrl: `https://demo-storage.com/${filename}`,
+        isDemo: true,
       };
     }
   },
@@ -105,15 +112,18 @@ export const api = {
    */
   uploadToS3: async (uploadUrl, file) => {
     if (uploadUrl.includes('demo-upload.com')) {
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return true;
     }
     const response = await fetch(uploadUrl, {
       method: 'PUT',
       body: file,
-      headers: { 'Content-Type': file.type }
+      headers: { 'Content-Type': file.type },
     });
-    return response.ok;
+    if (!response.ok) {
+      throw new Error('File upload failed');
+    }
+    return true;
   },
 
   /**

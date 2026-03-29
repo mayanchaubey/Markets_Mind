@@ -25,16 +25,11 @@ import {
   File as FileIcon,
   Download,
 } from 'lucide-react';
-import { suggestionGroups, demoCannedResponses, demoChatResponse } from '../data/demoResponses';
+import { suggestionGroups } from '../data/demoResponses';
 import { IntelligencePanel } from '../components/IntelligencePanel';
 import { api } from '../services/api';
 import { useChat } from '../context/ChatContext';
 import logo from '../assets/logo.png';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-const UPLOAD_URL_ENDPOINT = `${API_BASE_URL}/upload-url`;
-const CHAT_API_URL = import.meta.env.VITE_CHAT_ENDPOINT || 'http://localhost:8000/api/chat';
-
 
 const ICON_MAP = { Activity, TrendingUp, ShieldCheck };
 
@@ -443,37 +438,11 @@ export const ChatPage = () => {
 
     try {
       const uploadPromises = files.map(async (file) => {
-        const response = await fetch(UPLOAD_URL_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileName: file.name,
-            fileType: file.type || 'application/octet-stream',
-          }),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'Unable to initiate upload');
-        }
-
-        const { uploadUrl, fileUrl } = await response.json();
-        if (!uploadUrl || !fileUrl) {
-          throw new Error('Invalid upload URL response');
-        }
-
-        const putResponse = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': file.type || 'application/octet-stream',
-          },
-          body: file,
-        });
-
-        if (!putResponse.ok) {
-          throw new Error('File upload failed');
-        }
-
+        const { uploadUrl, fileUrl } = await api.getUploadUrl(
+          file.name,
+          file.type || 'application/octet-stream'
+        );
+        await api.uploadToS3(uploadUrl, file);
         return {
           url: fileUrl,
           name: file.name,
@@ -510,6 +479,7 @@ export const ChatPage = () => {
       }
 
       const userMsgId = Date.now().toString();
+      const attachmentsToSend = [...selectedFiles];
       const userMsg = {
         id: userMsgId,
         role: 'user',
@@ -517,7 +487,7 @@ export const ChatPage = () => {
         timestamp: Date.now(),
         type: selectedFiles.length > 0 ? 'mixed' : 'text',
         status: 'sending',
-        attachments: [...selectedFiles],
+        attachments: attachmentsToSend,
       };
 
       addMessage(currentChatId, userMsg);
@@ -528,24 +498,19 @@ export const ChatPage = () => {
       inputRef.current?.focus();
 
       try {
-        const response = await fetch(CHAT_API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: trimmedQuery,
-            history: [],
-            attachments: [],
-          }),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || `Chat API error ${response.status}`);
+        const { data: chatPayload, error: chatError } = await api.chat(
+          trimmedQuery,
+          attachmentsToSend,
+          []
+        );
+        if (!chatPayload) {
+          throw new Error(chatError || 'Empty chat response from the backend.');
+        }
+        if (chatError) {
+          console.warn('Chat API fallback:', chatError);
         }
 
-        const data = await response.json();
+        const data = chatPayload;
         console.log('Chat response intelligence:', data.intelligence || null);
 
         updateMessage(currentChatId, userMsgId, { status: 'done' });

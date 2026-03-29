@@ -2,8 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Zap, TrendingUp, TrendingDown, Minus, Filter, LayoutGrid, AlertCircle, Loader } from 'lucide-react';
 import { SignalCard } from '../components/SignalCard';
-
-const RADAR_API_URL = import.meta.env.VITE_RADAR_ENDPOINT || 'http://localhost:8000/api/radar';
+import { api } from '../services/api';
 
 const parseSignalType = (value) => {
   const normalized = (value || '').toString().toUpperCase();
@@ -76,24 +75,16 @@ export const RadarPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let mounted = true;
     const fetchOpportunities = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(RADAR_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: '' }),
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          const bodyText = await response.text();
-          throw new Error(bodyText || `Radar API error ${response.status}`);
+        const { data: payload, error } = await api.getRadarSignals('');
+        if (!mounted) return;
+        if (!payload) {
+          throw new Error(error || 'Empty radar response');
         }
-
-        const payload = await response.json();
         const rawOpportunities = Array.isArray(payload)
           ? payload
           : Array.isArray(payload?.opportunities)
@@ -103,17 +94,20 @@ export const RadarPage = () => {
               : [];
         setOpportunities(rawOpportunities.map(mapOpportunity));
       } catch (err) {
-        if (err.name === 'AbortError') return;
+        if (!mounted) return;
         console.error('Radar fetch failed:', err);
         setError(err.message || 'Unable to fetch radar data.');
         setOpportunities([]);
       } finally {
+        if (!mounted) return;
         setIsLoading(false);
       }
     };
 
     fetchOpportunities();
-    return () => controller.abort();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const allOpportunities = opportunities;

@@ -50,18 +50,12 @@ export const HomePage = () => {
     fetchData();
   }, []);
 
-  const landingBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
-  const landingNewsUrl = `${landingBaseUrl}/api/landing/data`;
-
   useEffect(() => {
-    const controller = new AbortController();
     let mounted = true;
     const fetchNews = async () => {
       setIsLoadingNews(true);
       try {
-        const response = await fetch(landingNewsUrl, { signal: controller.signal });
-        if (!response.ok) throw new Error(`News API ${response.status}`);
-        const payload = await response.json();
+        const { data: payload } = await api.getLandingData();
         console.log('News API:', payload);
         if (!mounted) return;
         const items = Array.isArray(payload?.news)
@@ -86,9 +80,8 @@ export const HomePage = () => {
     fetchNews();
     return () => {
       mounted = false;
-      controller.abort();
     };
-  }, [landingNewsUrl]);
+  }, []);
 
   useEffect(() => {
     if (!newsItems.length) return;

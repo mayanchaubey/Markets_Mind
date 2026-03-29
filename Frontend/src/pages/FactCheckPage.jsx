@@ -13,10 +13,8 @@ import {
   Paperclip,
 } from 'lucide-react';
 import { ClaimRow } from '../components/ClaimRow';
+import { api } from '../services/api';
 import { demoVerifyResult } from '../data/demoClaims';
-
-const FACTCHECK_API_URL =
-  import.meta.env.VITE_FACTCHECK_ENDPOINT || 'http://localhost:8000/api/factcheck';
 /* ─────────────────────────────────────────────────────────
    SUMMARY STAT CHIP
 ───────────────────────────────────────────────────────── */
@@ -59,18 +57,10 @@ export const FactCheckPage = () => {
     setAnalysisError(null);
 
     try {
-      const response = await fetch(FACTCHECK_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ youtube_url: input.trim() }),
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || `Fact check API error ${response.status}`);
+      const { data: payload, error } = await api.verifyClaims(input.trim());
+      if (!payload) {
+        throw new Error(error || 'Empty response from fact-check service.');
       }
-
-      const payload = await response.json();
       const claims = Array.isArray(payload?.claims) ? payload.claims : [];
       const summaryPayload = payload?.summary || {};
 
