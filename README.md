@@ -151,7 +151,25 @@ marketmind/
 │           ├── claim_extractor.py     # Groq-powered claim extraction
 │           └── claim_verifier.py      # Per-claim verdict generation
 └── frontend/
-    └── ...                            # React / Next.js app
+    └── ├── public/
+        ├── src/
+        │   ├── assets/
+        │   ├── components/
+        │   ├── constants/
+        │   ├── context/
+        │   ├── data/
+        │   ├── hooks/
+        │   ├── layouts/
+        │   ├── pages/
+        │   ├── services/
+        │   ├── styles/
+        │   ├── App.jsx
+        │   ├── main.jsx
+        │   └── index.css
+        ├── index.html
+        ├── package.json
+        ├── vite.config.js
+        └── .env                            # React  App
 ```
 
 ---
